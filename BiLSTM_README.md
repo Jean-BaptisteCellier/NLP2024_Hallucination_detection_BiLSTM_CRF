@@ -1,10 +1,8 @@
 # Bidirectional-LSTM-CRF for Hallucination Detection
 
 ### Running the Code
-To reproduce the results or experiment with the model, you can find the Jupyter Notebook file named **`BiLSTM_CRF.ipynb`** in the following path within the repository:
-  ```
-/src/deeplearn-approach/BiLSTM_CRF/BiLSTM_CRF.ipynb
-  ```
+To reproduce the results or experiment with the model, you can find the Jupyter Notebook file named **`BiLSTM_CRF.ipynb`** in the repository.
+
 In the first cell, you can define **nb_classes** either as 3 for the "BIO" approach (3-class problem), or as 2 for simple binary classification. The other .py files in the BiLSTM_CRF folder contain the necessary functions to run the notebook, for data processing, scoring, definition of the model, hyperparameter optimization, training and evaluation.
 
 
