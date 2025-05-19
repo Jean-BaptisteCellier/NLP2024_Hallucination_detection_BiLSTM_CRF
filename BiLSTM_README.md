@@ -32,7 +32,8 @@ This combination allows the model to handle long-term dependencies and make more
   - Embedding dimension: **512**
   - Hidden dimension: **150**
   - Learning rate: **0.005**
-  - Optimizer: **AdamW**
+  - Optimizer: **Adam**
+  However, we use 128 as the embedding dimension to reduce the computational effort.
 - Loss function:
   - Used **negative log-likelihood (CRF loss)** to guide the model during training.
 - Class Imbalance Handling:
@@ -44,6 +45,8 @@ This combination allows the model to handle long-term dependencies and make more
 ## Results
 
 ### Class Performance
+
+We first notice that the model usually overfits after a few epochs (3 or 4). We do not focus on solving this problem here, and still get acceptable results on the test set:
 
 #### With 3 classes: B, I, O
 
@@ -99,4 +102,4 @@ This combination allows the model to handle long-term dependencies and make more
 - The results show that using three classes in this context might not be very relevant. This indeed introduces a new (and "worst") **class imbalance** between the two types of hallucinated tokens, and class imbalance is difficult to deal with in this context. In particular:
     - The CRF tools in Python don't allow us to specify weights for the different classes.
     - Since we're considering full sequences, data augmentation for class "B" would result in new "I" and "O" instances.
-- The official scores obtained with 2 and 3 classes seem very good, and consistently outperform a random baseline over all languages However, with 3 classes, the model is struggling with the minority class "B" (very low recall, f1-score), which explains why this model leads to poorer results than binary classification.
+- The official scores obtained with 2 and 3 classes seem very good, and **consistently outperform a random baseline over all languages**. However, with 3 classes, the model is struggling with the minority class "B" (very low recall, f1-score), which explains why this model leads to poorer results than binary classification.

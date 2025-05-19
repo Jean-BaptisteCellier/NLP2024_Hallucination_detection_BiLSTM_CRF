@@ -35,12 +35,17 @@ class BiLSTM_CRF_Model(nn.Module):
         packed_input = nn.utils.rnn.pack_padded_sequence(combined_input, seq_lengths, batch_first=True, enforce_sorted=False)
         # Forward through BiLSTM
         packed_output, _ = self.lstm(packed_input)
-        lstm_output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True, padding_value=self.padding_idx)
+        lstm_output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True) #padding_value=self.padding_idx
         # Fully connected layer
         emissions = self.fc(lstm_output)
+        if torch.isnan(emissions).any():
+            print("NaN in emissions!")
         if labels is not None:
-            labels_clean = labels[:, :max(seq_lengths)]
-            mask_clean = mask[:, :max(seq_lengths)]
-            labels_clean = labels_clean * mask_clean
+            seq_len = emissions.size(1)
+            labels_clean = labels[:, :seq_len].clone()
+            mask_clean = mask[:, :seq_len]
+            labels_clean[~mask_clean] = self.padding_idx
+            # mask_clean = (x_tokens[:, :seq_len] != self.padding_idx)
             loss = -self.crf(emissions, labels_clean, mask=mask_clean)
             return emissions, loss
+        return emissions

@@ -1,8 +1,11 @@
 import torch
+import model_BiLSTMCRF as mod
 
 def train_model_bilstm_crf(model, train_loader, val_loader, optimizer, epochs=10):
     train_losses = []
     val_losses = []
+    best_val_loss = float('inf')
+    best_model = None
 
     for epoch in range(epochs):
         model.train() 
@@ -29,14 +32,19 @@ def train_model_bilstm_crf(model, train_loader, val_loader, optimizer, epochs=10
         val_true_labels = []
         with torch.no_grad():
             for batch in val_loader:
+                x_tokens, x_additional_features, labels = batch
                 outputs = model(x_tokens, x_additional_features, labels)
+
                 if isinstance(outputs, tuple):
                     emissions, loss = outputs
                 else:
                     emissions, loss = outputs, None
 
                 total_val_loss += loss.item()
-                predictions = model.crf.decode(emissions)
+
+                seq_len = emissions.size(1)
+                mask = x_tokens[:, :seq_len] != model.padding_idx
+                predictions = model.crf.decode(emissions, mask=mask)
 
                 # Collect predictions and true labels
                 for pred, label, mask in zip(predictions, labels, (x_tokens != model.padding_idx)):
@@ -49,6 +57,10 @@ def train_model_bilstm_crf(model, train_loader, val_loader, optimizer, epochs=10
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
 
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            best_model = model.state_dict()
+
         print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
-    return train_losses, val_losses, val_predictions, val_true_labels
+    return train_losses, val_losses, val_predictions, val_true_labels, best_model
