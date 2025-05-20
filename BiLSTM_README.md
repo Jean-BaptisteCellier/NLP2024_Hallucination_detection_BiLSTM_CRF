@@ -31,7 +31,7 @@ This combination allows the model to handle long-term dependencies and make more
   - Hidden dimension: **150**
   - Learning rate: **0.005**
   - Optimizer: **Adam**
-  However, we use 128 as the embedding dimension to reduce the computational effort.
+  However, we often use smaller dimensions to reduce the computational effort.
 - Loss function:
   - Used **negative log-likelihood (CRF loss)** to guide the model during training.
 - Class Imbalance Handling:
@@ -44,7 +44,7 @@ This combination allows the model to handle long-term dependencies and make more
 
 ### Class Performance
 
-We first notice that the model usually overfits after a few epochs (3 or 4). We do not focus on solving this problem here, and still get acceptable results on the test set:
+We first notice that the model usually **overfits after a few epochs (3 or 4)**. We do not focus on solving this problem here, and still get acceptable results on the test set:
 
 #### With 3 classes: B, I, O
 

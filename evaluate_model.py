@@ -1,54 +1,48 @@
 import torch
-import torch.nn.functional as F 
 from sklearn.metrics import accuracy_score, classification_report
+import numpy as np
 
-def evaluate_model_bilstm_crf(model, data_loader):
-    all_predictions = [] 
-    true_labels = [] 
-    hard_labels = []
-    soft_labels = []
-    total_loss = 0
+def evaluate_model_bilstm_crf2(model, data_loader):
+    model.eval()
+    all_predictions = []
+    true_labels = []
+    total_loss = 0.0
 
     with torch.no_grad():
         for x_tokens, x_additional_features, labels in data_loader:
-            mask = (x_tokens != model.padding_idx)
+            # Forward pass through model
             outputs = model(x_tokens, x_additional_features, labels)
             
             if isinstance(outputs, tuple):
-                emissions, loss = outputs 
+                emissions, loss = outputs
             else:
                 emissions = outputs
                 loss = None
 
-            # Soft and hard labels
-            probabilities = F.softmax(emissions, dim=-1)
-            predictions = torch.argmax(probabilities, dim=-1)
+            # Adjust mask to match emissions shape
+            seq_len = emissions.size(1)
+            mask = (x_tokens[:, :seq_len] != model.padding_idx)
 
-            max_len = probabilities.size(1)
-            x_tokens = x_tokens[:, :max_len]
-            labels = labels[:, :max_len]
-            mask = (x_tokens != model.padding_idx)
+            # Decode using CRF
+            batch_predictions = model.crf.decode(emissions, mask=mask)
 
-            valid_predictions = predictions[mask]
-            valid_labels = labels[mask]
-            valid_probs = probabilities[mask]
-
-            # Convert to lists and extend results
-            all_predictions.extend(valid_predictions.cpu().numpy().tolist())
-            true_labels.extend(valid_labels.cpu().numpy().tolist())
-            hard_labels.extend(valid_predictions.cpu().tolist())
-            soft_labels.extend(valid_probs.cpu().tolist())
+            # Collect true and predicted labels
+            for preds, true_seq, mask_seq in zip(batch_predictions, labels, mask):
+                valid_len = mask_seq.sum().item()
+                all_predictions.extend(preds[:valid_len])
+                true_labels.extend(true_seq[:valid_len].numpy())
 
             if loss is not None:
-                print("Loss:", loss.item())
                 total_loss += loss.item()
 
     avg_loss = total_loss / len(data_loader) if total_loss > 0 else None
 
     accuracy = accuracy_score(true_labels, all_predictions)
-    print(f"Accuracy: {accuracy * 100:.2f}%")
+    print(f"Accuracy: {accuracy * 100:.2f}%\n")
 
-    print("\nClassification Report:")
+    print("Classification Report:")
     print(classification_report(true_labels, all_predictions))
 
-    return avg_loss, all_predictions, true_labels, hard_labels, soft_labels
+    return avg_loss, all_predictions, np.stack(true_labels).tolist()
+
+
